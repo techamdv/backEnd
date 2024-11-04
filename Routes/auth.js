@@ -1,14 +1,24 @@
 // routes/userRoutes.js
 const express = require('express');
+const {body,validationResult} = require('express-validator');
+
 const User = require('../Models/User'); // Import the User model
 const router = express.Router();
 
 // Create a new user
 
-router.post('/', async (req, res) => {
+router.post('/',[
+    body("username").isLength({min: 6, max: 15}),
+    body("password").isLength({min: 6, max: 15}),
+
+], async (req, res) => {
     try {
-        await User.create(req.body);
-        // await newUser.save();
+        const err = validationResult(req)
+        if(!err.isEmpty() ){
+            return res.status(400).json(err)
+        }
+        const newUser =  User(req.body);
+        await newUser.save();
         res.status(201).json(newUser);
     } catch (error) {
         res.status(400).json({ error: error.message });
