@@ -1,11 +1,14 @@
 // routes/noteRoutes.js
 const express = require('express');
 const Note = require('../Models/Note'); // Import the Note model
+const fetchUser = require('../middleware/fetchUser');
 const router = express.Router();
 
 // Create a new note
-router.post('/', async (req, res) => {
+router.post('/',fetchUser, async (req, res) => {
     try {
+        req.body.userId = req.user.id
+        // console.log(req.body);
         const newNote = new Note(req.body);
         await newNote.save();
         res.status(201).json(newNote);
@@ -15,10 +18,12 @@ router.post('/', async (req, res) => {
 });
 
 // Get all notes for a specific user
-router.get('/user/:userId', async (req, res) => {
+router.get('/user',fetchUser, async (req, res) => {
     try {
-        const notes = await Note.find({ userId: req.params.userId });
-        res.json(notes);
+        const userId =  req.user.id
+
+        const notes = await Note.find({ userId: userId });
+        return  res.json(notes);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -38,28 +43,42 @@ router.get('/note/:id', async (req, res) => {
 });
 
 // Update a note by ID
-router.put('/:id', async (req, res) => {
+router.put('/:id',fetchUser, async (req, res) => {
     try {
-        const updatedNote = await Note.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        if (!updatedNote) {
+        const isNote = await Note.findById(req.params.id)
+        if(!isNote){
             return res.status(404).json({ error: 'Note not found' });
         }
-        res.json(updatedNote);
+        if(isNote.userId != req.user.id){
+            return res.status(404).json({ error: "User not allowed to manupulate other notes "});
+        }
+        const updatedNote = await Note.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!updatedNote) {
+            return res.status(404).json({ error: 'Note not found at time of update not' });
+        }
+        return res.status(200).json(updatedNote);
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
 });
 
 // Delete a note by ID
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', fetchUser, async (req, res) => {
     try {
-        const deletedNote = await Note.findByIdAndDelete(req.params.id);
-        if (!deletedNote) {
+        const isNote = await Note.findById(req.params.id)
+        if(!isNote){
             return res.status(404).json({ error: 'Note not found' });
         }
-        res.status(204).send();
+        if(isNote.userId != req.user.id){
+            return res.status(404).json({ error: "User not allowed to delete other's notes "});
+        }
+        const deletedNote = await Note.findByIdAndDelete(req.params.id);
+        if (!deletedNote) {
+            return res.status(404).json({ error: 'Note not found at time of delete' });
+        }
+        return res.status(200).json({status: "success" , message : 'deleted successfully '});
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(400).json({ error: error.message });
     }
 });
 

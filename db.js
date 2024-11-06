@@ -4,7 +4,7 @@ const mongoURI = process.env.mongoURI
 
 const connectToMongo = async () =>{
     await mongoose.connect(mongoURI)
-    console.log("connected to DB Successfully !! 👍🧐 ");
+    console.log("connected to DB Successfully !! 👍👍👍👍👍👍👍👍👍👍👍👍👍👍🧐 ");
     }
 
 module.exports =    connectToMongo
